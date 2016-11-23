@@ -31,6 +31,11 @@
 #define MII_VSC8244_EXTCON1_TX_SKEW	0x0800
 #define MII_VSC8244_EXTCON1_RX_SKEW	0x0200
 
+/* EXT_CON1 Register values for VSC8601 */
+#define MII_VSC8601_EXTCON1_INIT	0x0000
+#define MII_VSC8601_EXTCON1_SKEW	0x0100
+#define MII_VSC8601_EXTCON1_ACTIPHY	0x0020
+
 /* Vitesse Interrupt Mask Register */
 #define MII_VSC8244_IMASK		0x19
 #define MII_VSC8244_IMASK_IEN		0x8000
@@ -69,6 +74,7 @@
 #define PHY_ID_VSC8662			0x00070660
 #define PHY_ID_VSC8221			0x000fc550
 #define PHY_ID_VSC8211			0x000fc4b0
+#define PHY_ID_VSC8601			0x00070420
 
 MODULE_DESCRIPTION("Vitesse PHY driver");
 MODULE_AUTHOR("Kriston Carson");
@@ -109,6 +115,31 @@ static int vsc824x_config_init(struct phy_device *phydev)
 
 	return err;
 }
+
+static int vsc8601_config_init(struct phy_device *phydev)
+{
+	int err;
+	int extcon;
+
+	err = phy_write(phydev, MII_VSC8244_AUX_CONSTAT,
+			MII_VSC8244_AUXCONSTAT_INIT);
+
+	if (err < 0)
+		return err;
+
+#ifdef CONFIG_VITESSE_PHY_8601_SKEW
+	extcon = phy_read(phydev, MII_VSC8244_EXT_CON1);
+	if (err < 0)
+		return err;
+
+	extcon |= MII_VSC8601_EXTCON1_SKEW;
+
+	err = phy_write(phydev, MII_VSC8244_EXT_CON1, extcon);
+#endif
+
+	return err;
+}
+
 
 static int vsc824x_ack_interrupt(struct phy_device *phydev)
 {
@@ -309,6 +340,19 @@ static struct phy_driver vsc82xx_driver[] = {
 	.ack_interrupt	= &vsc824x_ack_interrupt,
 	.config_intr	= &vsc82xx_config_intr,
 	.driver		= { .owner = THIS_MODULE,},
+}, {
+	/* Vitesse 8601 */
+	.phy_id         = PHY_ID_VSC8601,
+	.phy_id_mask    = 0x000ffff8,
+	.name           = "Vitesse VSC8601",
+	.features       = PHY_GBIT_FEATURES,
+	.flags          = PHY_HAS_INTERRUPT,
+	.config_init    = &vsc8601_config_init,
+	.config_aneg    = &genphy_config_aneg,
+	.read_status    = &genphy_read_status,
+	.ack_interrupt  = &vsc824x_ack_interrupt,
+	.config_intr    = &vsc82xx_config_intr,
+	.driver         = { .owner = THIS_MODULE,},
 } };
 
 static int __init vsc82xx_init(void)
@@ -333,6 +377,7 @@ static struct mdio_device_id __maybe_unused vitesse_tbl[] = {
 	{ PHY_ID_VSC8662, 0x000ffff0 },
 	{ PHY_ID_VSC8221, 0x000ffff0 },
 	{ PHY_ID_VSC8211, 0x000ffff0 },
+	{ PHY_ID_VSC8601, 0x000ffff8 },
 	{ }
 };
 

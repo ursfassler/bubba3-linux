@@ -56,9 +56,14 @@ config CICADA_PHY
 	  Currently supports the cis8204
 
 config VITESSE_PHY
-        tristate "Drivers for the Vitesse PHYs"
-        ---help---
-          Currently supports the vsc8244
+	tristate "Drivers for the Vitesse PHYs"
+	---help---
+	  Currently supports the vsc8244 and vsc8601
+
+config VITESSE_PHY_8601_SKEW
+	bool "Enable skew timing to vsc8601"
+	---help---
+	  Apply clock timing adjustments for vsc8601
 
 config SMSC_PHY
 	tristate "Drivers for SMSC PHYs"
